@@ -137,7 +137,7 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(48px,6.2vw,104px);
 .carousel{position:relative}
 .track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
 .track::-webkit-scrollbar{display:none}
-.slide{flex:0 0 100%;scroll-snap-align:start;padding:clamp(22px,2.4vw,30px) clamp(16px,2.4vw,32px) 8px clamp(24px,4vw,56px)}
+.slide{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always;padding:clamp(22px,2.4vw,30px) clamp(16px,2.4vw,32px) 8px clamp(24px,4vw,56px)}
 .slide-inner{position:relative}
 .art-shadow{filter:drop-shadow(7px 7px 0 var(--deep))}
 .art-link{display:block;background:var(--paper);padding:3px;clip-path:polygon(2.5% 0,100% 3%,97.5% 100%,0 95%)}
@@ -418,7 +418,7 @@ const SPARKS = {
   const realOf = pos => ((pos - OFF) % N + N) % N;
   const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
 
-  function setActive(i, pos, first) {
+  function setActive(i, pos, first, wipe = true) {
     if (i === current) return;
     current = i;
     const g = GAMES[i];
@@ -431,12 +431,14 @@ const SPARKS = {
     tabBtns.forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
     if (!first) captions[i].style.setProperty('--d', '0s');
     replay(captions[i], 'settle');
-    if (!reduce) replay(slides[pos].querySelector('.wipe'), 'play');
+    if (!reduce && wipe) replay(slides[pos].querySelector('.wipe'), 'play');
   }
   // After a scroll settles on a copy at either end, jump invisibly to the real slide
   // Called when a scroll settles: jump invisibly off a copy at either end, then play the next queued move
   function settle() {
-    clearTimeout(endTimer); clearTimeout(safetyTimer);
+    clearTimeout(endTimer);
+    if (Math.abs(track.scrollLeft - posNow() * cw()) > 2) return;   // still mid-drag or snapping
+    clearTimeout(safetyTimer);
     target = null;
     if (loop) {
       const pos = posNow();
@@ -467,7 +469,7 @@ const SPARKS = {
     clearTimeout(endTimer); endTimer = setTimeout(settle, 140);
     const pos = posNow();
     if (target !== null && pos !== target) return;
-    setActive(realOf(pos), pos);
+    setActive(realOf(pos), pos, false, target !== null);   // swipes skip the wipe: the art is already in view
   }, { passive: true });
   track.addEventListener('scrollend', settle);
   tabs.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) request({ to: +b.dataset.go }); });
