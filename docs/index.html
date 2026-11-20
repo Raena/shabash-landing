@@ -123,8 +123,13 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(48px,6.2vw,104px);
 .stitch-h{position:absolute;left:var(--S);right:0;top:calc(-.5 * var(--gap) - 1.5px);height:3px;background:repeating-linear-gradient(to right,var(--ink) 0 9px,transparent 9px 17px);display:none}
 .is-stacked .stitch-v{display:none}
 .is-stacked .stitch-h{display:block}
-.ribbon{position:absolute;right:clamp(14px,1.6vw,22px);top:4px;width:28px;height:clamp(70px,7vw,92px);background:var(--paper);clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%);z-index:2;display:flex}
-.ribbon::after{content:"";flex:1;margin:0 3px 5px;background:var(--pumpkin);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
+.ribbon{position:absolute;right:clamp(16px,1.8vw,26px);top:-9px;z-index:2;width:clamp(36px,3vw,44px);height:clamp(96px,9.4vw,132px);transform:rotate(3.5deg);transform-origin:50% 0;filter:drop-shadow(4px 4px 0 var(--deep))}
+.ribbon-o{position:absolute;inset:0;background:var(--paper);clip-path:polygon(0 1%,100% 0,95% 100%,64% 74%,5% 90%)}
+.ribbon-i{position:absolute;inset:3px 3px 6px 3px;background:var(--pumpkin);clip-path:polygon(0 1%,100% 0,95% 100%,64% 73%,6% 89%);overflow:hidden}
+/* fold where it tucks over the panel edge */
+.ribbon-i::before{content:"";position:absolute;left:0;right:0;top:0;height:18px;background:var(--deep);clip-path:polygon(0 0,100% 0,100% 40%,0 100%)}
+/* stitching down the middle */
+.ribbon-i::after{content:"";position:absolute;left:calc(50% - 1px);top:24px;bottom:30%;width:2px;background:repeating-linear-gradient(to bottom,var(--ink) 0 5px,transparent 5px 9px);transform:rotate(-1.5deg)}
 .games .panel-body{display:flex;flex-direction:column}
 .games-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 20px;padding:clamp(26px,2.6vw,36px) clamp(58px,6vw,80px) 0 clamp(34px,6vw,92px)}
 .games-title{display:flex;flex-direction:column;gap:6px}
@@ -255,7 +260,7 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(48px,6.2vw,104px);
       <div class="stitch-v"></div>
       <div class="stitch-h"></div>
     </div>
-    <div class="ribbon" aria-hidden="true"></div>
+    <div class="ribbon" aria-hidden="true"><span class="ribbon-o"></span><span class="ribbon-i"></span></div>
     <div class="panel-body">
       <div class="games-head">
         <div class="games-title"><span class="chapter">✦ CH. 01</span><h2>Our games</h2></div>
