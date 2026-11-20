@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+.vercel
+
+# design source files (kept local)
+design_handoff_shabash_landing/
