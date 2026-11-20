@@ -411,7 +411,8 @@ const SPARKS = {
   const slabItems = [...$('#slab-items').children], plateItems = [...$('#plate').children];
   const captions = [...$('#captions').children];
   const tabBtns = [...tabs.children];
-  let current = -1, target = null, endTimer;
+  let current = -1, target = null, endTimer, safetyTimer;
+  const queue = [];   // clicks made while a slide is animating; played one after another
   const cw = () => track.clientWidth;
   const posNow = () => Math.round(track.scrollLeft / cw());
   const realOf = pos => ((pos - OFF) % N + N) % N;
@@ -433,38 +434,48 @@ const SPARKS = {
     if (!reduce) replay(slides[pos].querySelector('.wipe'), 'play');
   }
   // After a scroll settles on a copy at either end, jump invisibly to the real slide
-  function normalize() {
+  // Called when a scroll settles: jump invisibly off a copy at either end, then play the next queued move
+  function settle() {
+    clearTimeout(endTimer); clearTimeout(safetyTimer);
     target = null;
-    if (!loop) return;
-    const pos = posNow();
-    if (pos === 0) track.scrollLeft = N * cw();
-    else if (pos === N + 1) track.scrollLeft = cw();
+    if (loop) {
+      const pos = posNow();
+      if (pos === 0) track.scrollLeft = N * cw();
+      else if (pos === N + 1) track.scrollLeft = cw();
+    }
+    if (queue.length) run(queue.shift());
   }
   function scrollToPos(pos) {
+    if (pos === posNow()) { settle(); return; }
     target = pos;
     track.scrollTo({ left: pos * cw(), behavior: reduce ? 'auto' : 'smooth' });
     setActive(realOf(pos), pos);
-    if (reduce) normalize();
+    if (reduce) { settle(); return; }
+    clearTimeout(safetyTimer); safetyTimer = setTimeout(settle, 1500);   // in case no scrollend arrives
   }
-  function step(d) {
-    if (!loop) return;
-    let base = target ?? posNow();
-    if (base <= 0 || base >= N + 1) { normalize(); base = posNow(); }   // clicked again while sitting on a copy
-    scrollToPos(base + d);
+  // move = {step:±1} or {to:gameIndex}
+  function run(move) {
+    if ('to' in move) scrollToPos(move.to + OFF);
+    else if (loop) scrollToPos(posNow() + move.step);
+  }
+  function request(move) {
+    if (target === null) { run(move); return; }
+    if ('to' in move) queue.length = 0;          // a tab click replaces pending arrow presses
+    if (queue.length < 3) queue.push(move);
   }
   track.addEventListener('scroll', () => {
-    clearTimeout(endTimer); endTimer = setTimeout(normalize, 140);
+    clearTimeout(endTimer); endTimer = setTimeout(settle, 140);
     const pos = posNow();
     if (target !== null && pos !== target) return;
     setActive(realOf(pos), pos);
   }, { passive: true });
-  track.addEventListener('scrollend', () => { clearTimeout(endTimer); normalize(); });
-  tabs.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) scrollToPos(+b.dataset.go + OFF); });
-  $('#prev').addEventListener('click', () => step(-1));
-  $('#next').addEventListener('click', () => step(1));
+  track.addEventListener('scrollend', settle);
+  tabs.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) request({ to: +b.dataset.go }); });
+  $('#prev').addEventListener('click', () => request({ step: -1 }));
+  $('#next').addEventListener('click', () => request({ step: 1 }));
   $('#games').addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); step(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); request({ step: 1 }); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); request({ step: -1 }); }
   });
   track.scrollLeft = OFF * cw();
   setActive(0, OFF, true);
